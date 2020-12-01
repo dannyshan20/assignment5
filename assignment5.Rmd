@@ -16,8 +16,7 @@ The data you will be using comes from the Assistments online intelligent tutorin
 
 ## Start by uploading the data
 ```{r}
-D1 <- 
-
+D1 <- read.csv("Assistments-confidence.csv", header = TRUE)
 ```
 
 ## Create a correlation matrix of the relationships between the variables, including correlation coefficients for each pair of variables/features.
@@ -27,6 +26,8 @@ D1 <-
 
 library(ggplot2)
 library(GGally)
+library(tidyr)
+library(dplyr)
 
 ggpairs(D1, 2:8, progress = FALSE) #ggpairs() draws a correlation plot between all the columns you identify by number (second option, you don't need the first column as it is the student ID) and progress = FALSE stops a progress bar appearing as it renders your plot
 
@@ -38,14 +39,13 @@ ggcorr(D1[,-1], method = c("everything", "pearson")) #ggcorr() doesn't have an e
 ## Create a new data frame with the mean_correct variable removed, we want to keep that variable intact. The other variables will be included in our PCA.
 
 ```{r}
-D2 <- 
-
+D2 <- D1[, -5]
 ```
 
 ## Now run the PCA on the new data frame
 
 ```{r}
-pca <- prcomp(D2, scale. = TRUE)
+pca <- prcomp(D2[, 2:7], scale. = TRUE)
 ```
 
 ## Although princomp does not generate the eigenvalues directly for us, we can print a list of the standard deviation of the variance accounted for by each component.
@@ -68,21 +68,26 @@ plot(pca, type = "lines")
 
 ## Decide which components you would drop and remove them from your data set.
 
+I would drop pca 4, 5, and 6 because the variances are less than 1.
+
 ## Part II
 
 ```{r}
 #Now, create a data frame of the transformed data from your pca.
 
-D3 <- 
+D3 <- data.frame(pca$x)
 
 #Attach the variable "mean_correct" from your original data frame to D3.
 
-
+D3 <- D3[, 1:3]
+D3 <- mutate(D3, mean_correct = D1$mean_correct)
 
 #Now re-run your correlation plots between the transformed data and mean_correct. If you had dropped some components would you have lost important infomation about mean_correct?
 
+ggpairs(D3, progress = FALSE) 
+ggcorr(D3, method = c("everything", "pearson"))
 
-
+#We would. mean_correct is significantly correlated with PC4 and PC6 with r=.13, p<.05 and r=-.39, p<.001 respectively, dropping them will lead us to miss out the association between mean_correct with them.
 ```
 ## Now print out the loadings for the components you generated:
 
@@ -105,7 +110,14 @@ biplot(pca)
 Also in this repository is a data set collected from TC students (tc-program-combos.csv) that shows how many students thought that a TC program was related to andother TC program. Students were shown three program names at a time and were asked which two of the three were most similar. Use PCA to look for components that represent related programs. Explain why you think there are relationships between these programs.
 
 ```{r}
-
+tc <- read.csv("tc-program-combos.csv", header = TRUE)
+tc <- tc[-c(69),-1]
+pca_tc <- prcomp(tc, scale. = TRUE)
+plot(pca_tc, type = "line")
+#As eigenvalues showing the trend of stop decreasing so drastically after PC4, I will use PC 1-4 for analysis.
+pca_tc$rotation[ , 1:4]
+pca_df <- data.frame(abs(pca_tc$rotation[ , 1:4]))
+#PC 1 cares more about politics, leadership, and education, as PC 2 has a greater interest on psychology, neuroscience, and biology. PC 3 likes art and design while also enjoys math and technology. PC 4's interests are on linguistic and language acquisition, so he or she might stand for language education.
 ```
 
 
